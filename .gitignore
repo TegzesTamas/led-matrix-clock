@@ -130,3 +130,6 @@ dmypy.json
 
 # Pycharm files
 .idea
+
+# My run script
+run_matrix.sh

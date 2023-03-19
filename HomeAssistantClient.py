@@ -15,6 +15,8 @@ import json
 from ColorEffect import ColorEffect
 from common import Effect, create_matrix
 
+from argparse import ArgumentParser
+
 ENTITY_ID: Final = format(uuid.getnode(), 'X')
 
 BASE_TOPIC: Final = f'homeassistant/light/{ENTITY_ID}'
@@ -46,6 +48,14 @@ def bool_to_onoff_str(state: bool) -> str:
 
 
 class LedMatrixClient:
+    def __init__(
+        self,
+        mqtt_broker_host,
+        font
+    ):
+        self.mqtt_broker_host = mqtt_broker_host
+        self.font = font
+
     client = mqtt.Client()
     turned_on: bool = True
     brightness: int = 255
@@ -100,7 +110,7 @@ class LedMatrixClient:
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.will_set(AVAIL_TOPIC, AVAIL_PAYLOAD_FALSE, retain=True)
-        self.client.connect("server", 1883, 10)
+        self.client.connect(self.mqtt_broker_host, 1883, 10)
         try:
             self.client.publish(
                 f'{BASE_TOPIC}/config',
@@ -135,7 +145,7 @@ class LedMatrixClient:
             self.client.loop_start()
 
             font = graphics.Font()
-            font.LoadFont('/home/tamas/rpi-rgb-led-matrix/fonts/6x13.bdf')
+            font.LoadFont(self.font)
 
             pipes_effect = PipesEffect()
             field_effect = FieldEffect()
@@ -189,4 +199,19 @@ class LedMatrixClient:
 
 
 if __name__ == '__main__':
-    LedMatrixClient().main()
+    parser = ArgumentParser()
+    parser.add_argument(
+        "-b", "--mqtt_broker_host",
+        help="Hostname of the MQTT broker to connect to",
+        required=True
+    )
+    parser.add_argument(
+        "-f", "--font_file",
+        help="Font file to use to print the clock",
+        required=True
+    )
+    args = parser.parse_args()
+    LedMatrixClient(
+        mqtt_broker_host=args.mqtt_broker_host,
+        font=args.font_file
+    ).main()
