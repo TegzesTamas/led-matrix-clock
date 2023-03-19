@@ -99,7 +99,8 @@ class LedMatrixClient:
     def main(self):
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
-        self.client.connect("server", 1883, 60)
+        self.client.will_set(AVAIL_TOPIC, AVAIL_PAYLOAD_FALSE, retain=True)
+        self.client.connect("server", 1883, 10)
         try:
             self.client.publish(
                 f'{BASE_TOPIC}/config',
@@ -184,6 +185,7 @@ class LedMatrixClient:
                 AVAIL_PAYLOAD_FALSE,
                 retain=True
             )
+            self.client.disconnect()
 
 
 if __name__ == '__main__':
