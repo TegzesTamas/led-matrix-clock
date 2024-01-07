@@ -71,15 +71,21 @@ def sign(a):
 
 class Effect(Enum):
     DARK_CLOCK_FIX_COLOR = auto()
+    DARK_CLOCK_SCHEDULE_FIX_COLOR = auto()
     DARK_CLOCK_SWEEPING_COLOR = auto()
+    DARK_CLOCK_SCHEDULE_SWEEPING_COLOR = auto()
     PIPES_CLOCK = auto()
+    PIPES_CLOCK_SCHEDULE = auto()
     PIPES_NOCLOCK = auto()
     FIELD_CLOCK = auto()
+    FIELD_CLOCK_SCHEDULE = auto()
     FIELD_NOCLOCK = auto()
     FIX_COLOR = auto()
     FIX_COLOR_CLOCK = auto()
+    FIX_COLOR_CLOCK_SCHEDULE = auto()
     RANDOM_COLOR = auto()
     RANDOM_COLOR_CLOCK = auto()
+    RANDOM_COLOR_CLOCK_SCHEDULE = auto()
 
     def draw_clock(self):
         return (
@@ -90,22 +96,38 @@ class Effect(Enum):
             self is Effect.FIX_COLOR_CLOCK or
             self is Effect.RANDOM_COLOR_CLOCK
         )
+    
+    def draw_schedule(self):
+        return (
+            self is Effect.DARK_CLOCK_SCHEDULE_FIX_COLOR or
+            self is Effect.DARK_CLOCK_SCHEDULE_SWEEPING_COLOR or
+            self is Effect.PIPES_CLOCK_SCHEDULE or
+            self is Effect.FIELD_CLOCK_SCHEDULE or
+            self is Effect.FIX_COLOR_CLOCK_SCHEDULE or
+            self is Effect.RANDOM_COLOR_CLOCK_SCHEDULE
+        )
 
     def colored_background(self):
         return (
             self is Effect.PIPES_CLOCK or
+            self is Effect.PIPES_CLOCK_SCHEDULE or
             self is Effect.PIPES_NOCLOCK or
             self is Effect.FIELD_CLOCK or
+            self is Effect.FIELD_CLOCK_SCHEDULE or
             self is Effect.FIELD_NOCLOCK or
             self is Effect.FIX_COLOR or
             self is Effect.FIX_COLOR_CLOCK or
+            self is Effect.FIX_COLOR_CLOCK_SCHEDULE or
             self is Effect.RANDOM_COLOR or
-            self is Effect.RANDOM_COLOR_CLOCK
+            self is Effect.RANDOM_COLOR_CLOCK or
+            self is Effect.RANDOM_COLOR_CLOCK_SCHEDULE
         )
 
     def change_color(self):
         return (
             self is Effect.DARK_CLOCK_SWEEPING_COLOR or
+            self is Effect.DARK_CLOCK_SCHEDULE_SWEEPING_COLOR or
             self is Effect.RANDOM_COLOR or
-            self is Effect.RANDOM_COLOR_CLOCK
+            self is Effect.RANDOM_COLOR_CLOCK or
+            self is Effect.RANDOM_COLOR_CLOCK_SCHEDULE
         )

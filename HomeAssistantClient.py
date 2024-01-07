@@ -17,6 +17,8 @@ from common import Effect, create_matrix
 
 from argparse import ArgumentParser
 
+from bkk_futar_client.bkk_futar_client import arrivalMinutes
+
 ENTITY_ID: Final = format(uuid.getnode(), 'X')
 
 BASE_TOPIC: Final = f'homeassistant/light/{ENTITY_ID}'
@@ -51,10 +53,14 @@ class LedMatrixClient:
     def __init__(
         self,
         mqtt_broker_host,
-        font
+        font,
+        sched_font,
+        debug
     ):
         self.mqtt_broker_host = mqtt_broker_host
         self.font = font
+        self.sched_font = sched_font
+        self.debug = debug
 
     client = mqtt.Client()
     turned_on: bool = True
@@ -65,6 +71,9 @@ class LedMatrixClient:
         'g': 255,
         'b': 255
     }
+
+    lastScheduleUpdate: int = 0
+    lastScheduleText: str = ""
 
     matrix = create_matrix()
     canvas = matrix.CreateFrameCanvas()
@@ -146,6 +155,8 @@ class LedMatrixClient:
 
             font = graphics.Font()
             font.LoadFont(self.font)
+            sched_font = graphics.Font()
+            sched_font.LoadFont(self.sched_font)
 
             pipes_effect = PipesEffect()
             field_effect = FieldEffect()
@@ -153,15 +164,21 @@ class LedMatrixClient:
 
             drawers = {
                 Effect.DARK_CLOCK_FIX_COLOR: color_effect,
+                Effect.DARK_CLOCK_SCHEDULE_FIX_COLOR: color_effect,
                 Effect.DARK_CLOCK_SWEEPING_COLOR: color_effect,
+                Effect.DARK_CLOCK_SCHEDULE_SWEEPING_COLOR: color_effect,
                 Effect.PIPES_CLOCK: pipes_effect,
+                Effect.PIPES_CLOCK_SCHEDULE: pipes_effect,
                 Effect.PIPES_NOCLOCK: pipes_effect,
                 Effect.FIELD_CLOCK: field_effect,
+                Effect.FIELD_CLOCK_SCHEDULE: field_effect,
                 Effect.FIELD_NOCLOCK: field_effect,
                 Effect.FIX_COLOR: color_effect,
                 Effect.FIX_COLOR_CLOCK: color_effect,
+                Effect.FIX_COLOR_CLOCK_SCHEDULE: color_effect,
                 Effect.RANDOM_COLOR: color_effect,
-                Effect.RANDOM_COLOR_CLOCK: color_effect
+                Effect.RANDOM_COLOR_CLOCK: color_effect,
+                Effect.RANDOM_COLOR_CLOCK_SCHEDULE: color_effect,
             }
 
             while True:
@@ -184,6 +201,36 @@ class LedMatrixClient:
                         graphics.DrawText(self.canvas, font, 1, 12,
                                           graphics.Color(*text_color),
                                           time.strftime("%H:%M"))
+                    if self.effect.draw_schedule():
+                        if self.effect.colored_background():
+                            text_color = (0, 0, 0)
+                        else:
+                            text_color = (self.color['r'] * self.brightness / 255,
+                                          self.color['g'] *
+                                          self.brightness / 255,
+                                          self.color['b'] * self.brightness / 255)
+
+                        graphics.DrawText(self.canvas, sched_font, 4, 7,
+                                          graphics.Color(*text_color),
+                                          time.strftime("%H:%M"))
+
+                        currentTime = time.mktime(time.localtime())
+                        if((currentTime - self.lastScheduleUpdate) > 20):
+                            minutes = arrivalMinutes()
+                            self.lastScheduleUpdate = currentTime
+                            text = ""
+                            for minute in minutes:
+                                minText = f"{round(minute)}"
+                                if(len(text)>0):
+                                    minText=f",{minText}"
+                                if (len(text) + len(minText) <= 6):
+                                    text = text+minText
+                            self.lastScheduleText = text
+                        graphics.DrawText(self.canvas, sched_font,
+                                        round((32-(len(self.lastScheduleText)*5))/2),
+                                        15,
+                                        graphics.Color(*text_color),
+                                        self.lastScheduleText)
                 self.canvas = self.matrix.SwapOnVSync(self.canvas)
                 self.publish_state()
                 self.lock.release()
@@ -210,8 +257,21 @@ if __name__ == '__main__':
         help="Font file to use to print the clock",
         required=True
     )
+    parser.add_argument(
+        "-s", "--sched_font",
+        help="Font file to use to print the clock",
+        required=True
+    )
+    parser.add_argument(
+        "--debug",
+        help="Font file to use to print the clock",
+        required=False,
+        action='store_true'
+    )
     args = parser.parse_args()
     LedMatrixClient(
         mqtt_broker_host=args.mqtt_broker_host,
-        font=args.font_file
+        font=args.font_file,
+        sched_font=args.sched_font,
+        debug=args.debug
     ).main()

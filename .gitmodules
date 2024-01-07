@@ -1,0 +1,3 @@
+[submodule "bkk-futar-client"]
+	path = bkk_futar_client
+	url = git@github.com:TegzesTamas/bkk-futar-client
